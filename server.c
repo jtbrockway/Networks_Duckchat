@@ -19,6 +19,10 @@ int main(int argc, char *argv[]){
 				perror("Please enter: Host address and Host Port");
 
 				exit(EXIT_FAILURE);
+		}else{
+				char *hello;
+				hello = argv[1];
+				perror(hello);
 		}
 
 
