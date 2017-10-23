@@ -3,7 +3,6 @@ CC=g++
 CFLAGS=-Wall -W -g -Werror 
 
 
-
 all: client server
 
 client: client.c raw.c
