@@ -164,6 +164,18 @@ int main(int argc, char *argv[]){
 					sendto(sockfd, join_req, sizeof(request_join), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 				}
 
+				//Handle Leave Request
+				if(strcmp(&token[0], "/leave") == 0){
+					char *channel = &token[7];
+					if(strlen(channel) > 64){
+						perror("Client: Channel name too long");
+						exit(EXIT_FAILURE);
+					}
+					strncpy(leave_req->req_channel, channel, CHANNEL_MAX - 1);
+
+					sendto(sockfd, leave_req, sizeof(request_leave), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+				}
+
 				//Handle exit request
 				if(strcmp(&token[0], "/exit\n") == 0){
 					//Logout
