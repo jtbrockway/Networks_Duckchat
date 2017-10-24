@@ -137,7 +137,21 @@ int main(int argc, char *argv[]){
 			perror("Client: Joining (Common) failed");
 			exit(EXIT_FAILURE);
 	}
-
+	
+	//Continuously parse input
+	char input[100];
+	while(1){
+		if(fgets(input, 99, stdin) != NULL){
+			//Tokenize the input
+			char *token;
+			char first;
+			token = strtok(input, " ");
+			first = *token;
+			if(first == '/'){
+				printf("Theres a request!");
+			}
+		}
+	}
 
 	clear_mem();
 	return 0;
