@@ -176,6 +176,37 @@ int main(int argc, char *argv[]){
 					sendto(sockfd, leave_req, sizeof(request_leave), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 				}
 
+				//Handle List request
+				if(strcmp(&token[0], "/list") == 0){
+					sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+					//FIX : NEED TO HANDLE RECIEVING THE LIST!!!!!!!!!
+				}
+
+				//Handle Who request
+				if(strcmp(&token[0], "/who") == 0){
+					char *channel = &token[4];
+					if(strlen(channel) > 64){
+						perror("Client: Channel name too long");
+						exit(EXIT_FAILURE);
+					}
+					strncpy(who_req->req_channel, channel, CHANNEL_MAX - 1);
+
+					sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+					//FIX : NEED TO HANDLE RECIEVING THE WHO!!!!!!!!!
+				}
+
+				//Handle Switch request
+				if(strcmp(&token[0], "/switch") == 0){
+					char *channel = &token[8];
+					if(strlen(channel) > 64){
+						perror("Client: Channel name too long");
+						exit(EXIT_FAILURE);
+					}
+					strncpy(join_req->req_channel, channel, CHANNEL_MAX - 1);
+
+					sendto(sockfd, join_req, sizeof(request_join), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+				}
+
 				//Handle exit request
 				if(strcmp(&token[0], "/exit\n") == 0){
 					//Logout
