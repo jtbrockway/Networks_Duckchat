@@ -147,12 +147,23 @@ int main(int argc, char *argv[]){
 			char first;
 			token = strtok(input, " ");
 			first = *token;
+
+			//If theres a request
 			if(first == '/'){
-				printf("Theres a request!");
+
+				//Handle exit request
+				if(strcmp(&token[0], "/exit\n") == 0){
+					//Logout
+					while(sendto(sockfd, logout_req, sizeof(request_logout), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != sizeof(request_logout)){
+						perror("Client: Logging out failed");
+					}
+					break;
+				}
 			}
 		}
 	}
 
 	clear_mem();
+	shutdown(sockfd, SHUT_RDWR);
 	return 0;
 }
