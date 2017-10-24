@@ -141,8 +141,9 @@ int main(int argc, char *argv[]){
 	//Continuously parse input
 	char input[100];
 	while(1){
-		if(fgets(input, 99, stdin) != NULL){
+		if(fgets(input, 100, stdin) != NULL){
 			//Tokenize the input
+			//char *inputCopy = input;
 			char *token;
 			char first;
 			token = strtok(input, " ");
@@ -151,12 +152,22 @@ int main(int argc, char *argv[]){
 			//If theres a request
 			if(first == '/'){
 
+				//Handle Join request
+				if(strcmp(&token[0], "/join") == 0){
+					char *channel = &token[6];
+					if(strlen(channel) > 64){
+						perror("Client: Channel name too long");
+						exit(EXIT_FAILURE);
+					}
+					strncpy(join_req->req_channel, channel, CHANNEL_MAX - 1);
+
+					sendto(sockfd, join_req, sizeof(request_join), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+				}
+
 				//Handle exit request
 				if(strcmp(&token[0], "/exit\n") == 0){
 					//Logout
-					while(sendto(sockfd, logout_req, sizeof(request_logout), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != sizeof(request_logout)){
-						perror("Client: Logging out failed");
-					}
+					sendto(sockfd, logout_req, sizeof(request_logout), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 					break;
 				}
 			}
