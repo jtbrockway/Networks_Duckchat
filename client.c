@@ -177,18 +177,27 @@ int main(int argc, char *argv[]){
 				}
 
 				//Handle List request
-				if(strcmp(&token[0], "/list") == 0){
+				if(strcmp(&token[0], "/list\n") == 0){
 					sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+
+					char rcvMsg[65536];
+					socklen_t fromLen;
+	
+					fromLen = sizeof(serv_addr);
+					recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
+					printf("Client: %s\n", rcvMsg);
 					//FIX : NEED TO HANDLE RECIEVING THE LIST!!!!!!!!!
 				}
 
 				//Handle Who request
 				if(strcmp(&token[0], "/who") == 0){
-					char *channel = &token[4];
+					char *channel = &token[5];
 					if(strlen(channel) > 64){
 						perror("Client: Channel name too long");
 						exit(EXIT_FAILURE);
 					}
+					channel[strlen(channel) - 1] = 0;
+
 					strncpy(who_req->req_channel, channel, CHANNEL_MAX - 1);
 
 					sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
