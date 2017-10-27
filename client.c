@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <pthread.h>
+
 #include <string.h>
 #include <strings.h>
 #include <arpa/inet.h>
@@ -16,6 +18,7 @@ char *SERVER_HOST_IP_ADDRESS;
 char ip[100];
 char *USERNAME;
 int  SERVER_PORT;
+char currentChannel[CHANNEL_MAX];
 
 //Instantiate all requests
 struct sockaddr_in serv_addr;
@@ -26,6 +29,10 @@ struct request_leave *leave_req;
 struct request_say *say_req;
 struct request_list *list_req;
 struct request_who *who_req;
+struct text_say *say_txt;
+struct text_list *list_txt;
+struct text_who *who_txt;
+struct text_error *error_txt;
 
 //Allocates space for requests and initializes them
 void create_requests(){
@@ -37,6 +44,10 @@ void create_requests(){
 	say_req       = (request_say *)malloc(sizeof(request_say));
 	list_req     = (request_list *)malloc(sizeof(request_list));
 	who_req       = (request_who *)malloc(sizeof(request_who));
+	say_txt          = (text_say *)malloc(sizeof(text_say));
+	list_txt        = (text_list *)malloc(sizeof(text_list));
+	who_txt          = (text_who *)malloc(sizeof(text_who));
+	error_txt      = (text_error *)malloc(sizeof(text_error));
 	//Initialize requests to 0
 	memset(login_req, 0, sizeof(request_login));
 	memset(logout_req, 0, sizeof(request_logout));
@@ -45,6 +56,10 @@ void create_requests(){
 	memset(say_req, 0, sizeof(request_say));
 	memset(list_req, 0, sizeof(request_list));
 	memset(who_req, 0, sizeof(request_who));
+	memset(say_txt, 0, sizeof(text_say));
+	memset(list_txt, 0, sizeof(text_list));
+	memset(who_txt, 0, sizeof(text_who));
+	memset(error_txt, 0, sizeof(text_error));
 	//Set request codes
 	login_req -> req_type = 0;
 	logout_req -> req_type = 1;
@@ -84,6 +99,15 @@ void clear_mem(){
 	free(list_req);
 	free(who_req);
 	return;
+}
+
+//Function that handles recieving anything from the server
+void *recieveThread(void *){
+	while(1){
+		recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
+	}
+
+	return NULL;
 }
 
 int main(int argc, char *argv[]){
@@ -137,15 +161,22 @@ int main(int argc, char *argv[]){
 			perror("Client: Joining (Common) failed");
 			exit(EXIT_FAILURE);
 	}
-	
+
+	//Begin recieving thread
+	pthread_t rcvThread;
+	pthread_create(&rcvThread, NULL, &recieveThread, NULL);
+
 	//Continuously parse input
-	char input[100];
+	strcpy(currentChannel, "Common");
 	while(1){
+		char input[100];
+		char tokenCopy[100];
 		if(fgets(input, 100, stdin) != NULL){
 			//Tokenize the input
 			char *token;
 			char first;
-			token = strtok(input, " ");
+			strcpy(tokenCopy, input);
+			token = strtok(tokenCopy, " ");
 			first = *token;
 
 			//If theres a request
@@ -158,9 +189,13 @@ int main(int argc, char *argv[]){
 						perror("Client: Channel name too long");
 						exit(EXIT_FAILURE);
 					}
+					channel[strlen(channel) - 1] = 0;
+
 					strncpy(join_req->req_channel, channel, CHANNEL_MAX - 1);
 
 					sendto(sockfd, join_req, sizeof(request_join), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+					
+					strcpy(currentChannel, channel);
 				}
 
 				//Handle Leave Request
@@ -179,12 +214,12 @@ int main(int argc, char *argv[]){
 				if(strcmp(&token[0], "/list\n") == 0){
 					sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
-					text_list *servMsg;
-					char rcvMsg[65536];
+					text_list *servMsg = (text_list *)malloc(sizeof(text_list));
+					memset(servMsg, 0, sizeof(text_list));
+					char rcvMsg[1024];
 					socklen_t fromLen;
 	
 					fromLen = sizeof(serv_addr);
-					recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
 					
 					servMsg = (text_list *)rcvMsg;
 					printf("Existing Channel:\n");
@@ -209,8 +244,9 @@ int main(int argc, char *argv[]){
 
 					sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
-					text_who *servMsg;
-					char rcvMsg[65536];
+					text_who *servMsg = (text_who *)malloc(sizeof(text_who));
+					memset(servMsg, 0, sizeof(text_who));
+					char rcvMsg[1024];
 					socklen_t fromLen;
 	
 					fromLen = sizeof(serv_addr);
@@ -243,6 +279,12 @@ int main(int argc, char *argv[]){
 					sendto(sockfd, logout_req, sizeof(request_logout), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 					break;
 				}
+			}else{
+				strcpy(input, "Nonsense");
+				//Send the users message
+				strcpy(say_req->req_channel, currentChannel);
+				strncpy(say_req->req_text, input, SAY_MAX);
+				sendto(sockfd, say_req, sizeof(request_say), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 			}
 		}
 	}
