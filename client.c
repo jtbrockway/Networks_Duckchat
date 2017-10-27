@@ -180,13 +180,22 @@ int main(int argc, char *argv[]){
 				if(strcmp(&token[0], "/list\n") == 0){
 					sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
+					text_list *servMsg;
 					char rcvMsg[65536];
 					socklen_t fromLen;
 	
 					fromLen = sizeof(serv_addr);
 					recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
-					printf("Client: %s\n", rcvMsg);
-					//FIX : NEED TO HANDLE RECIEVING THE LIST!!!!!!!!!
+					
+					servMsg = (text_list *)rcvMsg;
+					printf("Existing Channel:\n");
+
+					int i;
+					for(i = 0; i < servMsg->txt_nchannels; i++){
+						char *channel = servMsg->txt_channels[i].ch_channel;
+						printf(" %s\n", channel);
+					}
+					//FIX: NEED TO HANDLE RECIEVING THE LIST!!!!!!!!!
 				}
 
 				//Handle Who request
