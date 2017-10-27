@@ -194,7 +194,6 @@ int main(int argc, char *argv[]){
 						char *channel = servMsg->txt_channels[i].ch_channel;
 						printf(" %s\n", channel);
 					}
-					//FIX: NEED TO HANDLE RECIEVING THE LIST!!!!!!!!!
 				}
 
 				//Handle Who request
@@ -205,11 +204,25 @@ int main(int argc, char *argv[]){
 						exit(EXIT_FAILURE);
 					}
 					channel[strlen(channel) - 1] = 0;
-
+	
 					strncpy(who_req->req_channel, channel, CHANNEL_MAX - 1);
 
 					sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-					//FIX : NEED TO HANDLE RECIEVING THE WHO!!!!!!!!!
+
+					text_who *servMsg;
+					char rcvMsg[65536];
+					socklen_t fromLen;
+	
+					fromLen = sizeof(serv_addr);
+					recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
+					
+					servMsg = (text_who *)rcvMsg;
+					printf("Users on channel %s:\n", channel);
+
+					int i;
+					for(i = 0; i < servMsg->txt_nusernames; i++){
+						printf(" %s\n", servMsg->txt_users[i].us_username);
+					}
 				}
 
 				//Handle Switch request
