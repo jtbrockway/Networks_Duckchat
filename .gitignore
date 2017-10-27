@@ -1,6 +1,6 @@
 *.d
 *.o
-.swp
+*.swp
 client
 server
 serverR
