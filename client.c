@@ -143,7 +143,6 @@ int main(int argc, char *argv[]){
 	while(1){
 		if(fgets(input, 100, stdin) != NULL){
 			//Tokenize the input
-			//char *inputCopy = input;
 			char *token;
 			char first;
 			token = strtok(input, " ");
