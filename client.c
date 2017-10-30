@@ -119,7 +119,9 @@ void *recieveThread(void *){
 		
 		//Handle Say text
 		if(inType == 0){
-			printf("SAY\n");
+			say_txt = (text_say *)rcvMsg;
+
+			printf("[%s][%s]: %s", say_txt->txt_channel, say_txt->txt_username, say_txt->txt_text);
 		}
 		
 		//Handle List text
@@ -136,14 +138,21 @@ void *recieveThread(void *){
 
 		//Handle Who text
 		if(inType == 2){
-			printf("WHO\n");
+			who_txt = (text_who *)rcvMsg;
+
+			printf("Users on channel %s:\n", who_req->req_channel);
+			int i;
+			for(i = 0; i < who_txt->txt_nusernames; i++){
+				printf(" %s\n", who_txt->txt_users[i].us_username);
+			}
 		}
 
 		//Handle Error text
 		if(inType == 3){
-			printf("ERROR\n");
+			error_txt = (text_error *)rcvMsg;
+			
+			printf("Client ERROR: %s\n", error_txt -> txt_error);
 		}
-
 	}
 
 	return NULL;
@@ -199,13 +208,15 @@ int main(int argc, char *argv[]){
 			perror("Client: Joining (Common) failed");
 			exit(EXIT_FAILURE);
 	}
+	
+	strcpy(currentChannel, "Common");
 
 	//Begin recieving thread
 	pthread_t rcvThread;
 	pthread_create(&rcvThread, NULL, &recieveThread, NULL);
 
+	raw_mode();
 	//Continuously parse input
-	strcpy(currentChannel, "Common");
 	while(1){
 		char input[100];
 		char tokenCopy[100];
@@ -230,7 +241,6 @@ int main(int argc, char *argv[]){
 					channel[strlen(channel) - 1] = 0;
 
 					strncpy(join_req->req_channel, channel, CHANNEL_MAX - 1);
-
 					sendto(sockfd, join_req, sizeof(request_join), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 					
 					strcpy(currentChannel, channel);
@@ -251,22 +261,6 @@ int main(int argc, char *argv[]){
 				//Handle List request
 				if(strcmp(&token[0], "/list\n") == 0){
 					sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-					/*
-					text_list *servMsg = (text_list *)malloc(sizeof(text_list));
-					memset(servMsg, 0, sizeof(text_list));
-					char rcvMsg[1024];
-					socklen_t fromLen;	
-					fromLen = sizeof(serv_addr);
-					
-					servMsg = (text_list *)rcvMsg;
-					printf("Existing Channel:\n");
-
-					int i;
-					for(i = 0; i < servMsg->txt_nchannels; i++){
-						char *channel = servMsg->txt_channels[i].ch_channel;
-						printf(" %s\n", channel);
-					}
-					*/
 				}
 
 				//Handle Who request
@@ -281,23 +275,6 @@ int main(int argc, char *argv[]){
 					strncpy(who_req->req_channel, channel, CHANNEL_MAX - 1);
 
 					sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-					/*
-					text_who *servMsg = (text_who *)malloc(sizeof(text_who));
-					memset(servMsg, 0, sizeof(text_who));
-					char rcvMsg[1024];
-					socklen_t fromLen;
-	
-					fromLen = sizeof(serv_addr);
-					recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
-					
-					servMsg = (text_who *)rcvMsg;
-					printf("Users on channel %s:\n", channel);
-
-					int i;
-					for(i = 0; i < servMsg->txt_nusernames; i++){
-						printf(" %s\n", servMsg->txt_users[i].us_username);
-					}
-					*/
 				}
 
 				//Handle Switch request
@@ -319,7 +296,6 @@ int main(int argc, char *argv[]){
 					break;
 				}
 			}else{
-				strcpy(input, "Nonsense");
 				//Send the users message
 				strcpy(say_req->req_channel, currentChannel);
 				strncpy(say_req->req_text, input, SAY_MAX);
@@ -328,6 +304,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 
+	cooked_mode();
 	pthread_cancel(rcvThread);
 	clear_mem();
 	shutdown(sockfd, SHUT_RDWR);
