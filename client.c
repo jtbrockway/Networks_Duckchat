@@ -18,6 +18,7 @@ char *SERVER_HOST_IP_ADDRESS;
 char ip[100];
 char *USERNAME;
 int  SERVER_PORT;
+int sockfd;
 char currentChannel[CHANNEL_MAX];
 
 //Instantiate all requests
@@ -68,6 +69,10 @@ void create_requests(){
 	say_req -> req_type = 4;
 	list_req -> req_type = 5;
 	who_req -> req_type = 6;
+	say_txt -> txt_type = 0;
+	list_txt -> txt_type = 1;
+	who_txt -> txt_type = 2;
+	error_txt -> txt_type = 3;
 }
 
 //Gets the IP address when given a domain name
@@ -103,8 +108,42 @@ void clear_mem(){
 
 //Function that handles recieving anything from the server
 void *recieveThread(void *){
+	char rcvMsg[4096];
+	socklen_t fromLen;
+	fromLen = sizeof(serv_addr);
+
 	while(1){
+		text_t inType;
 		recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
+		inType = ((text *)rcvMsg)->txt_type;
+		
+		//Handle Say text
+		if(inType == 0){
+			printf("SAY\n");
+		}
+		
+		//Handle List text
+		if(inType == 1){
+			list_txt = (text_list *)rcvMsg;
+
+			printf("Existing Channels:\n");
+			int i;
+			for(i = 0; i < list_txt->txt_nchannels; i++){
+				char *channel = list_txt->txt_channels[i].ch_channel;
+				printf(" %s\n", channel);
+			}
+		}
+
+		//Handle Who text
+		if(inType == 2){
+			printf("WHO\n");
+		}
+
+		//Handle Error text
+		if(inType == 3){
+			printf("ERROR\n");
+		}
+
 	}
 
 	return NULL;
@@ -140,7 +179,6 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_port = htons(SERVER_PORT);
 
 	//Create socket for client
-	int sockfd;
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
 			perror("Client: cannot open datagram socket\n");
 	}
@@ -213,12 +251,11 @@ int main(int argc, char *argv[]){
 				//Handle List request
 				if(strcmp(&token[0], "/list\n") == 0){
 					sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-
+					/*
 					text_list *servMsg = (text_list *)malloc(sizeof(text_list));
 					memset(servMsg, 0, sizeof(text_list));
 					char rcvMsg[1024];
-					socklen_t fromLen;
-	
+					socklen_t fromLen;	
 					fromLen = sizeof(serv_addr);
 					
 					servMsg = (text_list *)rcvMsg;
@@ -229,6 +266,7 @@ int main(int argc, char *argv[]){
 						char *channel = servMsg->txt_channels[i].ch_channel;
 						printf(" %s\n", channel);
 					}
+					*/
 				}
 
 				//Handle Who request
@@ -243,7 +281,7 @@ int main(int argc, char *argv[]){
 					strncpy(who_req->req_channel, channel, CHANNEL_MAX - 1);
 
 					sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-
+					/*
 					text_who *servMsg = (text_who *)malloc(sizeof(text_who));
 					memset(servMsg, 0, sizeof(text_who));
 					char rcvMsg[1024];
@@ -259,6 +297,7 @@ int main(int argc, char *argv[]){
 					for(i = 0; i < servMsg->txt_nusernames; i++){
 						printf(" %s\n", servMsg->txt_users[i].us_username);
 					}
+					*/
 				}
 
 				//Handle Switch request
@@ -289,6 +328,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 
+	pthread_cancel(rcvThread);
 	clear_mem();
 	shutdown(sockfd, SHUT_RDWR);
 	return 0;
