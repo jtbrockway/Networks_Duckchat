@@ -17,9 +17,11 @@ int SERVER_PORT;
 int sockfd;
 
 struct sockaddr_in serv_addr;
+struct sockaddr_in cli_addr;
+int clilen;
 
 //Gets the IP address when given a domain name
-//Obtained from binarytides;
+//Obtained from binarytides.com
 int getHost(char *hostname, char *ip){
 	struct hostent *he;
 	struct in_addr **addr_list;
@@ -67,10 +69,24 @@ int main(int argc, char *argv[]){
 		}
 		listen(sockfd, 10);
 
-		//int newsockfd;
+		int newsockfd;
+		char rcvMsg[4096];
+		socklen_t fromLen;
+		fromLen = sizeof(cli_addr);
 		//Continuously listen to clients
 		while(1){
-			//newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+			newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
+
+			request_t reqType;
+			recvfrom(newsockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&serv_addr, &fromLen);
+			reqType = ((request *)rcvMsg)->req_type;
+
+			if(reqType == 0){
+				printf("LOGIN");
+			}
+			if(reqType == 2){
+				printf("JOIN");
+			}
 		}
 		return 0;
 }

@@ -20,7 +20,7 @@ char *USERNAME;
 int  SERVER_PORT;
 int sockfd;
 char currentChannel[CHANNEL_MAX];
-char activeChannels[CHANNEL_MAX][CHANNEL_MAX];
+char activeChannels[1024][CHANNEL_MAX];
 
 //Instantiate all requests
 struct sockaddr_in serv_addr;
