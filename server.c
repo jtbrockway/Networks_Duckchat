@@ -67,12 +67,10 @@ int main(int argc, char *argv[]){
 		}
 		listen(sockfd, 10);
 
-		int newsockfd;
+		//int newsockfd;
 		//Continuously listen to clients
 		while(1){
-			newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
-
-
+			//newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
 		}
 		return 0;
 }
