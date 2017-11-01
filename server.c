@@ -32,6 +32,12 @@ struct text_list *list_txt;
 struct text_who *who_txt;
 struct text_error *error_txt;
 
+//User Struct
+struct User{
+	char username[USERNAME_MAX];
+	sockaddr_in user_socket;
+};
+
 //Allocates space for requests and initializes them
 void create_requests(){
 	//Allocate space for requests
@@ -142,7 +148,7 @@ int main(int argc, char *argv[]){
 
 	listen(sockfd, 10);
 
-	char rcvMsg[4096];
+	char rcvMsg[65536];
 	socklen_t fromLen;
 	fromLen = sizeof(cli_addr);
 	//Continuously listen to clients

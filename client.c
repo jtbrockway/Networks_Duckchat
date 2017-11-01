@@ -258,7 +258,7 @@ int main(int argc, char *argv[]){
 					int j;
 					int in = 0;
 					for(j = 0; j < CHANNEL_MAX; j++){
-						if(strcmp(activeChannels[j], "0") == 0){
+						if(strcmp(activeChannels[j], channel) == 0){
 							in = 1;
 							break;
 						}
@@ -282,14 +282,22 @@ int main(int argc, char *argv[]){
 					}
 					channel[strlen(channel) - 1] = 0;
 					strncpy(leave_req->req_channel, channel, CHANNEL_MAX - 1);
-
-					sendto(sockfd, leave_req, sizeof(request_leave), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-
 					int j;
+					int in = 0;
 					for(j = 0; j < CHANNEL_MAX; j++){
-						if(strcmp(channel, activeChannels[j]) == 0){
-							strcpy(activeChannels[j], "0");
+						if(strcmp(activeChannels[j], channel) == 0){
+							in = 1;
 							break;
+						}
+					}
+					if(in){
+						sendto(sockfd, leave_req, sizeof(request_leave), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+
+						for(j = 0; j < CHANNEL_MAX; j++){
+							if(strcmp(channel, activeChannels[j]) == 0){
+								strcpy(activeChannels[j], "0");
+								break;
+							}
 						}
 					}
 				}
