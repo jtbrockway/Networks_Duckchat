@@ -104,6 +104,10 @@ void clear_mem(){
 	free(say_req);
 	free(list_req);
 	free(who_req);
+	free(say_txt);
+	free(list_txt);
+	free(who_txt);
+	free(error_txt);
 	return;
 }
 
@@ -192,7 +196,6 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(ip);
 	serv_addr.sin_port = htons(SERVER_PORT);
-
 	//Create socket for client
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
 			perror("Client: cannot open datagram socket\n");
