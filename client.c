@@ -113,7 +113,7 @@ void clear_mem(){
 
 //Function that handles recieving anything from the server
 void *recieveThread(void *){
-	char rcvMsg[4096];
+	char rcvMsg[65536];
 	socklen_t fromLen;
 	fromLen = sizeof(serv_addr);
 
@@ -256,10 +256,19 @@ int main(int argc, char *argv[]){
 					//Add to active channels
 					strcpy(currentChannel, channel);
 					int j;
+					int in = 0;
 					for(j = 0; j < CHANNEL_MAX; j++){
 						if(strcmp(activeChannels[j], "0") == 0){
-							strcpy(activeChannels[j], channel);
+							in = 1;
 							break;
+						}
+					}
+					if(!in){
+						for(j = 0; j < CHANNEL_MAX; j++){
+							if(strcmp(activeChannels[j], "0") == 0){
+								strcpy(activeChannels[j], channel);
+								break;
+							}
 						}
 					}
 				}
