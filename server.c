@@ -1,3 +1,8 @@
+/*Jack Brockway
+ * Student ID: 951411701
+ *
+ * Randy Chen assisted with figuring out the logic of sending and recieving messages
+ */
 #include "duckchat.h"
 
 #include <sys/types.h>
@@ -58,7 +63,7 @@ void create_requests(){
 	list_req     = (request_list *)malloc(sizeof(request_list));
 	who_req       = (request_who *)malloc(sizeof(request_who));
 	say_txt          = (text_say *)malloc(sizeof(text_say));
-	list_txt        = (text_list *)malloc(sizeof(Channel)*8192 + sizeof(text_list));
+	list_txt        = (text_list *)malloc(sizeof(sizeof(text_list)));
 	who_txt          = (text_who *)malloc(sizeof(user_info)*4096 +  sizeof(text_who));
 	error_txt      = (text_error *)malloc(sizeof(text_error));
 	//Initialize requests to 0
@@ -251,11 +256,11 @@ int main(int argc, char *argv[]){
 
 			int i;
 			int exists = 0;
-			for(i = 0; i < totalChannels; i++){
+			for(i = 0; i < 8192; i++){
 				if(strcmp(channels[i].chanName, join_req->req_channel) == 0){
 					int j;
 					int userExists = 0;
-					for(j = 0; j < totalUsers; j++){
+					for(j = 0; j < 4096; j++){
 						if(strcmp(channels[i].chanUsers[j].username, currentUser->username) == 0){
 							userExists = 1;
 							break;
@@ -350,7 +355,27 @@ int main(int argc, char *argv[]){
 
 		//Handle LIST request
 		if(reqType == 5){
-			printf("LIST");
+			list_req = (request_list *)rcvMsg;
+
+			int chanCount = 0;
+			//Count channels
+			int i;
+			for(i = 0; i < 8192; i++){
+				if(!(strcmp(channels[i].chanName, " ") == 0)){
+					chanCount++;
+				}
+			}
+			int listSize = sizeof(text_list) + chanCount * sizeof(channel_info);
+			list_txt = (text_list *)realloc(list_txt, listSize);
+			list_txt->txt_type = TXT_LIST;
+			list_txt->txt_nchannels = chanCount;
+
+			for(i = 0; i < chanCount; i++){
+				if(!(strcmp(channels[i].chanName, " ") == 0)){
+					strcpy(list_txt->txt_channels[i].ch_channel, channels[i].chanName);
+				}
+			}
+			sendto(sockfd, list_txt, listSize, 0, (struct sockaddr *)&(currentUser->user_addr), sizeof(currentUser->user_addr));
 		}
 		
 		//Handle WHO request
