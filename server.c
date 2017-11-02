@@ -64,7 +64,7 @@ void create_requests(){
 	who_req       = (request_who *)malloc(sizeof(request_who));
 	say_txt          = (text_say *)malloc(sizeof(text_say));
 	list_txt        = (text_list *)malloc(sizeof(sizeof(text_list)));
-	who_txt          = (text_who *)malloc(sizeof(user_info)*4096 +  sizeof(text_who));
+	who_txt          = (text_who *)malloc(sizeof(text_who));
 	error_txt      = (text_error *)malloc(sizeof(text_error));
 	//Initialize requests to 0
 	memset(login_req, 0, sizeof(request_login));
@@ -380,7 +380,27 @@ int main(int argc, char *argv[]){
 		
 		//Handle WHO request
 		if(reqType == 6){
-			printf("WHO");
+			who_req = (request_who *)rcvMsg;
+
+			int userCount = 0;
+			//Count users
+			int i;
+			for(i = 0; i < 8192; i++){
+				if(strcmp(who_req->req_channel, channels[i].chanName) == 0){
+					int j;
+					for(j = 0; j < 4096; j++){
+						if(!(strcmp(channels[i].chanUsers[j].username, " ") == 0)){
+							userCount++;
+						}
+					}
+					break;
+				}
+			}
+			int whoSize = sizeof(text_who) + userCount * sizeof(user_info);
+			who_txt = (text_who *)realloc(who_txt, whoSize);
+			who_txt->txt_type = TXT_WHO;
+			who_txt->txt_nusernames = userCount;
+			strcpy(who_txt->txt_channel, who_req->req_channel);
 		}
 	}
 
