@@ -252,6 +252,11 @@ int main(int argc, char *argv[]){
 						perror("Client: Channel name too long");
 						exit(EXIT_FAILURE);
 					}
+					if(strcmp(channel, " ") == 0){
+						perror("Please input a valid channel");
+						continue;
+					}
+
 					channel[strlen(channel) - 1] = 0;
 
 					strncpy(join_req->req_channel, channel, CHANNEL_MAX - 1);

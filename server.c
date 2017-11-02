@@ -17,7 +17,14 @@ struct User{
 	sockaddr_in user_addr;
 };
 
+//Channel Struct
+struct Channel{
+	char chanName[CHANNEL_MAX];
+	struct User *chanUsers[4096];
+};
+
 struct User users[4096];
+struct Channel channels[8192];
 
 char *SERVER_HOST_IP_ADDRESS;
 char ip[100];
@@ -154,18 +161,16 @@ int main(int argc, char *argv[]){
 
 	listen(sockfd, 10);
 
+	User *currentUser = (User *)malloc(sizeof(User));;
 	char rcvMsg[65536];
 	socklen_t fromLen;
 	fromLen = sizeof(cli_addr);
 	//Continuously listen to clients
 	while(1){
-		accept(sockfd, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
-
 		if(recvfrom(sockfd, rcvMsg, sizeof(rcvMsg), 0, (struct sockaddr *)&cli_addr, &fromLen) < 0){
 			continue;
 		}
 
-		User *currentUser;
 		currentUser->user_addr = cli_addr;
 
 		request_t reqType;
@@ -184,9 +189,23 @@ int main(int argc, char *argv[]){
 				}
 			}
 
-			printf("User: %s has logged in", login_req->req_username);
+			printf("User %s has logged in\n", users[i].username);
 		}
-
+		
+		//Set currentUser's Username
+		int i;
+		int userExists = 0;
+		for(i = 0; i < 4096; i++){
+			if((users[i].user_addr.sin_addr.s_addr == currentUser->user_addr.sin_addr.s_addr) && (users[i].user_addr.sin_port == currentUser->user_addr.sin_port)){
+					strcpy(currentUser->username, users[i].username);
+					userExists = 1;
+					break;
+			}
+		}
+		if(!userExists){
+			continue;
+		}
+		
 		//Handle LOGOUT request
 		if(reqType == 1){
 			printf("LOGOUT");
@@ -194,7 +213,40 @@ int main(int argc, char *argv[]){
 
 		//Handle JOIN request
 		if(reqType == 2){
-			printf("JOIN");
+			join_req = (request_join *)rcvMsg;
+
+			int i;
+			int exists = 0;
+			for(i = 0; i < 8192; i++){
+				if(strcmp(channels[i].chanName, join_req->req_channel) == 0){
+					int j;
+					int userExists = 0;
+					for(j = 0; j < 4096; j++){
+						if(strcmp(channels[i].chanUsers[j]->username, currentUser->username) == 0){
+							userExists = 1;
+							break;
+						}
+					}
+					if(!userExists){
+						for(j = 0; j < 4096; j++){
+							if(strcmp(channels[i].chanUsers[j]->username, " ") == 0){
+								strcpy(channels[i].chanUsers[j]->username, currentUser->username);
+								channels[i].chanUsers[j]->user_addr = currentUser->user_addr;
+							}
+						}
+					}
+					exists = 1;
+					break;
+				}
+			}
+			if(!exists){
+				for(i = 0; i < 8192; i++){
+					if(strcmp(channels[i].chanName, " ") == 0){
+						strcpy(channels[i].chanName, join_req->req_channel);
+						channels[i].chanUsers[0] = currentUser;
+					}
+				}
+			}
 		}
 
 		//Handle LEAVE request
@@ -218,6 +270,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 
+	free(currentUser);
 	clear_mem();
 	return 0;
 }
