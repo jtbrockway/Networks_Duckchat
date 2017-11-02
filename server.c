@@ -20,7 +20,7 @@ struct User{
 //Channel Struct
 struct Channel{
 	char chanName[CHANNEL_MAX];
-	struct User *chanUsers[4096];
+	struct User chanUsers[4096];
 };
 
 struct User users[4096];
@@ -124,10 +124,20 @@ int getHost(char *hostname, char *ip){
 }
 
 int main(int argc, char *argv[]){
+	//Initialize various arrays
 	int i;
 	for(i = 0; i < 4096; i++){
 		strcpy(users[i].username, " ");
 	}
+	for(i = 0; i < 8192; i++){
+		strcpy(channels[i].chanName, " ");
+		int j;
+		for(j = 0; j < 4096; j++){
+			strcpy(channels[i].chanUsers[j].username, " ");
+		}
+	}
+
+
 	//Allocate Requests
 	create_requests();
 
@@ -160,6 +170,8 @@ int main(int argc, char *argv[]){
 	}
 
 	listen(sockfd, 10);
+
+	fprintf(stdout, "Server is ready to recieve clients\n");
 
 	User *currentUser = (User *)malloc(sizeof(User));;
 	char rcvMsg[65536];
@@ -222,16 +234,16 @@ int main(int argc, char *argv[]){
 					int j;
 					int userExists = 0;
 					for(j = 0; j < 4096; j++){
-						if(strcmp(channels[i].chanUsers[j]->username, currentUser->username) == 0){
+						if(strcmp(channels[i].chanUsers[j].username, currentUser->username) == 0){
 							userExists = 1;
 							break;
 						}
 					}
 					if(!userExists){
 						for(j = 0; j < 4096; j++){
-							if(strcmp(channels[i].chanUsers[j]->username, " ") == 0){
-								strcpy(channels[i].chanUsers[j]->username, currentUser->username);
-								channels[i].chanUsers[j]->user_addr = currentUser->user_addr;
+							if(strcmp(channels[i].chanUsers[j].username, " ") == 0){
+								strcpy(channels[i].chanUsers[j].username, currentUser->username);
+								channels[i].chanUsers[j].user_addr = currentUser->user_addr;
 							}
 						}
 					}
@@ -243,7 +255,9 @@ int main(int argc, char *argv[]){
 				for(i = 0; i < 8192; i++){
 					if(strcmp(channels[i].chanName, " ") == 0){
 						strcpy(channels[i].chanName, join_req->req_channel);
-						channels[i].chanUsers[0] = currentUser;
+						strcpy(channels[i].chanUsers[0].username, currentUser->username);
+						channels[i].chanUsers[0].user_addr = currentUser->user_addr;
+						break;
 					}
 				}
 			}
