@@ -11,6 +11,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+//User Struct
+struct User{
+	char username[USERNAME_MAX];
+	sockaddr_in user_addr;
+};
+
+struct User users[4096];
+
 char *SERVER_HOST_IP_ADDRESS;
 char ip[100];
 int SERVER_PORT;
@@ -31,12 +39,6 @@ struct text_say *say_txt;
 struct text_list *list_txt;
 struct text_who *who_txt;
 struct text_error *error_txt;
-
-//User Struct
-struct User{
-	char username[USERNAME_MAX];
-	sockaddr_in user_socket;
-};
 
 //Allocates space for requests and initializes them
 void create_requests(){
@@ -115,6 +117,10 @@ int getHost(char *hostname, char *ip){
 }
 
 int main(int argc, char *argv[]){
+	int i;
+	for(i = 0; i < 4096; i++){
+		strcpy(users[i].username, " ");
+	}
 	//Allocate Requests
 	create_requests();
 
@@ -159,12 +165,26 @@ int main(int argc, char *argv[]){
 			continue;
 		}
 
+		User *currentUser;
+		currentUser->user_addr = cli_addr;
+
 		request_t reqType;
 		reqType = ((request *)rcvMsg)->req_type;
 
 		//Handle LOGIN Request
 		if(reqType == 0){
-			printf("LOGIN");
+			login_req = (request_login *)rcvMsg;
+
+			int i;
+			for(i = 0; i < 4096; i++){
+				if(strcmp(users[i].username, " ") == 0){
+					strcpy(users[i].username, login_req->req_username);
+					users[i].user_addr = cli_addr;
+					break;
+				}
+			}
+
+			printf("User: %s has logged in", login_req->req_username);
 		}
 
 		//Handle LOGOUT request
