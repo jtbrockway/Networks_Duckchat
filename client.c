@@ -20,7 +20,7 @@ char *USERNAME;
 int  SERVER_PORT;
 int sockfd;
 char currentChannel[CHANNEL_MAX];
-char activeChannels[1024][CHANNEL_MAX];
+char activeChannels[8192][CHANNEL_MAX];
 
 //Instantiate all requests
 struct sockaddr_in serv_addr;
@@ -340,9 +340,8 @@ int main(int argc, char *argv[]){
 					channel[strlen(channel) - 1] = 0;
 					int nonActive = 0;
 					int j;
-					for(j = 0; j < CHANNEL_MAX; j++){
+					for(j = 0; j < 8192; j++){
 						if(strcmp(channel, activeChannels[j]) == 0){
-
 							strcpy(currentChannel, channel);
 							nonActive = 1;
 							break;

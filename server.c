@@ -251,11 +251,11 @@ int main(int argc, char *argv[]){
 
 			int i;
 			int exists = 0;
-			for(i = 0; i < 8192; i++){
+			for(i = 0; i < totalChannels; i++){
 				if(strcmp(channels[i].chanName, join_req->req_channel) == 0){
 					int j;
 					int userExists = 0;
-					for(j = 0; j < 4096; j++){
+					for(j = 0; j < totalUsers; j++){
 						if(strcmp(channels[i].chanUsers[j].username, currentUser->username) == 0){
 							userExists = 1;
 							break;
@@ -323,10 +323,28 @@ int main(int argc, char *argv[]){
 		if(reqType == 4){
 			say_req = (request_say *)rcvMsg;
 
-			int i;
-			for(i = 0; i < 8196; i++){
+			int chanValid = 0;
 
-				break;
+			int i;
+			//Check if channel is valid
+			for(i = 0; i < 8196; i++){
+				if(strcmp(channels[i].chanName, say_req->req_channel) == 0){
+					chanValid = 1;
+					break;
+				}
+			}
+			
+			if(chanValid){
+				strcpy(say_txt->txt_channel, say_req->req_channel);
+				strcpy(say_txt->txt_username, currentUser->username);
+				strcpy(say_txt->txt_text, say_req->req_text);
+
+				int j;
+				for(j = 0; j < 4096; j++){
+					if(!(strcmp(channels[i].chanUsers[j].username, " ") == 0)){
+						sendto(sockfd, say_txt, sizeof(text_say), 0, (struct sockaddr *)&(channels[i].chanUsers[j].user_addr), sizeof(channels[i].chanUsers[j].user_addr));
+					}
+				}
 			}
 		}
 
