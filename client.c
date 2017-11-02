@@ -190,6 +190,10 @@ int main(int argc, char *argv[]){
 			perror("Username exceeds 32 bits");
 			exit(EXIT_FAILURE);
 	}
+	if(strcmp(USERNAME, " ") == 0){
+		perror("Please input a valid username");
+		exit(EXIT_FAILURE);
+	}
 
 	//Specify server info
 	bzero((char *)&serv_addr, sizeof(serv_addr));
