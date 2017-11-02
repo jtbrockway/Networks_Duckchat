@@ -401,6 +401,14 @@ int main(int argc, char *argv[]){
 			who_txt->txt_type = TXT_WHO;
 			who_txt->txt_nusernames = userCount;
 			strcpy(who_txt->txt_channel, who_req->req_channel);
+
+			int j;
+			for(j = 0; j < userCount; j++){
+				if(!(strcmp(channels[i].chanUsers[j].username, " ") == 0)){
+					strcpy(who_txt->txt_users[j].us_username, channels[i].chanUsers[j].username);
+				}
+			}
+			sendto(sockfd, who_txt, whoSize, 0, (struct sockaddr *)&(currentUser->user_addr), sizeof(currentUser->user_addr));
 		}
 	}
 
