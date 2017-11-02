@@ -193,11 +193,22 @@ int main(int argc, char *argv[]){
 			login_req = (request_login *)rcvMsg;
 
 			int i;
+			int userExists = 0;
 			for(i = 0; i < 4096; i++){
-				if(strcmp(users[i].username, " ") == 0){
-					strcpy(users[i].username, login_req->req_username);
-					users[i].user_addr = cli_addr;
-					break;
+				if((users[i].user_addr.sin_addr.s_addr == currentUser->user_addr.sin_addr.s_addr) && (users[i].user_addr.sin_port == currentUser->user_addr.sin_port)){
+					if(strcmp(users[i].username, login_req->req_username) == 0){
+						userExists = 1;
+						break;
+					}
+				}
+			}
+			if(!userExists){
+				for(i = 0; i < 4096; i++){
+					if(strcmp(users[i].username, " ") == 0){
+						strcpy(users[i].username, login_req->req_username);
+						users[i].user_addr = cli_addr;
+						break;
+					}
 				}
 			}
 
@@ -220,7 +231,18 @@ int main(int argc, char *argv[]){
 		
 		//Handle LOGOUT request
 		if(reqType == 1){
-			printf("LOGOUT");
+			int i;
+			for(i = 0; i < 8192; i++){
+				int j;
+				if(!strcmp(channels[i].chanName, " ") == 0){
+					for(j = 0; j < 4096; j++){
+						if(strcmp(channels[i].chanUsers[j].username, currentUser->username) == 0){
+							strcpy(channels[i].chanUsers[j].username, " ");
+							break;
+						}
+					}
+				}
+			}
 		}
 
 		//Handle JOIN request
