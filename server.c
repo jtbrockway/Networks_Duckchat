@@ -293,9 +293,26 @@ int main(int argc, char *argv[]){
 			for(i = 0; i < 8192; i++){
 				if(strcmp(channels[i].chanName, leave_req->req_channel) == 0){
 					int j;
+					int removed = 0;
 					for(j = 0; j < 4096; j++){
 						if(strcmp(channels[i].chanUsers[j].username, currentUser->username) == 0){
 							strcpy(channels[i].chanUsers[j].username, " ");
+							removed = 1;
+							break;
+						}
+					}
+					if(removed){
+						int userCount = 0;
+						for(j = 0; j < 4096; j++){
+							if(!(strcmp(channels[i].chanUsers[j].username, " ") == 0)){
+								userCount = 1;
+								break;
+							}
+						}
+						if(userCount == 0){
+							printf("REMOVED A CHANNEL\n");
+							strcpy(channels[i].chanName, " ");
+							break;
 						}
 					}
 				}
@@ -304,7 +321,13 @@ int main(int argc, char *argv[]){
 		
 		//Handle SAY request
 		if(reqType == 4){
-			printf("SAY");
+			say_req = (request_say *)rcvMsg;
+
+			int i;
+			for(i = 0; i < 8196; i++){
+
+				break;
+			}
 		}
 
 		//Handle LIST request
