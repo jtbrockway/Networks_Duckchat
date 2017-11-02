@@ -271,6 +271,7 @@ int main(int argc, char *argv[]){
 							if(strcmp(channels[i].chanUsers[j].username, " ") == 0){
 								strcpy(channels[i].chanUsers[j].username, currentUser->username);
 								channels[i].chanUsers[j].user_addr = currentUser->user_addr;
+								break;
 							}
 						}
 					}
@@ -383,32 +384,37 @@ int main(int argc, char *argv[]){
 			who_req = (request_who *)rcvMsg;
 
 			int userCount = 0;
+			int validChannel = 0;
 			//Count users
 			int i;
 			for(i = 0; i < 8192; i++){
 				if(strcmp(who_req->req_channel, channels[i].chanName) == 0){
+					validChannel = 1;
 					int j;
 					for(j = 0; j < 4096; j++){
 						if(!(strcmp(channels[i].chanUsers[j].username, " ") == 0)){
 							userCount++;
+							printf("%s\n", channels[i].chanUsers[j].username);
 						}
 					}
 					break;
 				}
 			}
-			int whoSize = sizeof(text_who) + userCount * sizeof(user_info);
-			who_txt = (text_who *)realloc(who_txt, whoSize);
-			who_txt->txt_type = TXT_WHO;
-			who_txt->txt_nusernames = userCount;
-			strcpy(who_txt->txt_channel, who_req->req_channel);
+			if(validChannel){
+				int whoSize = sizeof(text_who) + userCount * sizeof(user_info);
+				who_txt = (text_who *)realloc(who_txt, whoSize);
+				who_txt->txt_type = TXT_WHO;
+				who_txt->txt_nusernames = userCount;
+				strcpy(who_txt->txt_channel, who_req->req_channel);
 
-			int j;
-			for(j = 0; j < userCount; j++){
-				if(!(strcmp(channels[i].chanUsers[j].username, " ") == 0)){
-					strcpy(who_txt->txt_users[j].us_username, channels[i].chanUsers[j].username);
+				int j;
+				for(j = 0; j < userCount; j++){
+					if(!(strcmp(channels[i].chanUsers[j].username, " ") == 0)){
+						strcpy(who_txt->txt_users[j].us_username, channels[i].chanUsers[j].username);
+					}
 				}
+				sendto(sockfd, who_txt, whoSize, 0, (struct sockaddr *)&(currentUser->user_addr), sizeof(currentUser->user_addr));
 			}
-			sendto(sockfd, who_txt, whoSize, 0, (struct sockaddr *)&(currentUser->user_addr), sizeof(currentUser->user_addr));
 		}
 	}
 
