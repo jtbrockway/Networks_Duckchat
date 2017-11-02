@@ -287,7 +287,21 @@ int main(int argc, char *argv[]){
 
 		//Handle LEAVE request
 		if(reqType == 3){
-			printf("LEAVE");
+			leave_req = (request_leave *)rcvMsg;
+			printf("%s\n", channels[0].chanUsers[0].username);
+
+			int i;
+			for(i = 0; i < 8192; i++){
+				if(strcmp(channels[i].chanName, leave_req->req_channel) == 0){
+					int j;
+					for(j = 0; j < 4096; j++){
+						if(strcmp(channels[i].chanUsers[j].username, currentUser->username) == 0){
+							strcpy(channels[i].chanUsers[j].username, " ");
+						}
+					}
+				}
+			}
+			printf("%s\n", channels[0].chanUsers[0].username);
 		}
 		
 		//Handle SAY request
