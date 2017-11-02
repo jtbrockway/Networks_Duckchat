@@ -58,8 +58,8 @@ void create_requests(){
 	list_req     = (request_list *)malloc(sizeof(request_list));
 	who_req       = (request_who *)malloc(sizeof(request_who));
 	say_txt          = (text_say *)malloc(sizeof(text_say));
-	list_txt        = (text_list *)malloc(sizeof(text_list));
-	who_txt          = (text_who *)malloc(sizeof(text_who));
+	list_txt        = (text_list *)malloc(sizeof(Channel)*8192 + sizeof(text_list));
+	who_txt          = (text_who *)malloc(sizeof(user_info)*4096 +  sizeof(text_who));
 	error_txt      = (text_error *)malloc(sizeof(text_error));
 	//Initialize requests to 0
 	memset(login_req, 0, sizeof(request_login));
@@ -288,7 +288,6 @@ int main(int argc, char *argv[]){
 		//Handle LEAVE request
 		if(reqType == 3){
 			leave_req = (request_leave *)rcvMsg;
-			printf("%s\n", channels[0].chanUsers[0].username);
 
 			int i;
 			for(i = 0; i < 8192; i++){
@@ -301,7 +300,6 @@ int main(int argc, char *argv[]){
 					}
 				}
 			}
-			printf("%s\n", channels[0].chanUsers[0].username);
 		}
 		
 		//Handle SAY request
