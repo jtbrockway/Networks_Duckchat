@@ -21,6 +21,7 @@ int  SERVER_PORT;
 int sockfd;
 char currentChannel[CHANNEL_MAX];
 char activeChannels[8192][CHANNEL_MAX];
+char inMsg[SAY_MAX+1];
 
 //Instantiate all requests
 struct sockaddr_in serv_addr;
@@ -126,7 +127,16 @@ void *recieveThread(void *){
 		if(inType == 0){
 			say_txt = (text_say *)rcvMsg;
 			
-			printf("[%s][%s]: %s", say_txt->txt_channel, say_txt->txt_username, say_txt->txt_text);
+			int backPrint = strlen(inMsg);
+			int i;
+			for(i = 0; i < backPrint; i++){
+				printf("\b");
+			}
+			printf("[%s][%s]: %s\n", say_txt->txt_channel, say_txt->txt_username, say_txt->txt_text);
+			fflush(stdout);
+
+			printf(">%s", inMsg);
+			fflush(stdout);
 		}
 		
 		//Handle List text
@@ -232,139 +242,156 @@ int main(int argc, char *argv[]){
 	raw_mode();
 	//Continuously parse input
 	while(1){
-		char input[100];
+		memset(&inMsg[0], 0, SAY_MAX);
 		char tokenCopy[100];
-		if(fgets(input, 100, stdin) != NULL){
-			//Tokenize the input
-			char *token;
-			char first;
-			strcpy(tokenCopy, input);
-			token = strtok(tokenCopy, " ");
-			first = *token;
-
-			//If theres a request
-			if(first == '/'){
-
-				//Handle Join request
-				if(strcmp(&token[0], "/join") == 0){
-					char *channel = &token[6];
-					if(strlen(channel) > 64){
-						perror("Client: Channel name too long");
-						exit(EXIT_FAILURE);
-					}
-					if(strcmp(channel, " ") == 0){
-						perror("Please input a valid channel");
-						continue;
-					}
-
-					channel[strlen(channel) - 1] = 0;
-
-					strncpy(join_req->req_channel, channel, CHANNEL_MAX - 1);
-					sendto(sockfd, join_req, sizeof(request_join), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-					
-					//Add to active channels
-					strcpy(currentChannel, channel);
-					int j;
-					int in = 0;
-					for(j = 0; j < CHANNEL_MAX; j++){
-						if(strcmp(activeChannels[j], channel) == 0){
-							in = 1;
-							break;
-						}
-					}
-					if(!in){
-						for(j = 0; j < CHANNEL_MAX; j++){
-							if(strcmp(activeChannels[j], "0") == 0){
-								strcpy(activeChannels[j], channel);
-								break;
-							}
-						}
-					}
+		char input[100];
+		char inChar;
+		int charCtr = 0;
+		printf(">");
+		while(1){
+			inChar = getchar();
+			if(charCtr == SAY_MAX){
+				if(inChar != '\n'){
+					continue;
 				}
-
-				//Handle Leave Request
-				if(strcmp(&token[0], "/leave") == 0){
-					char *channel = &token[7];
-					if(strlen(channel) > 64){
-						perror("Client: Channel name too long");
-						exit(EXIT_FAILURE);
-					}
-					channel[strlen(channel) - 1] = 0;
-					strncpy(leave_req->req_channel, channel, CHANNEL_MAX - 1);
-					int j;
-					int in = 0;
-					for(j = 0; j < CHANNEL_MAX; j++){
-						if(strcmp(activeChannels[j], channel) == 0){
-							in = 1;
-							break;
-						}
-					}
-					if(in){
-						sendto(sockfd, leave_req, sizeof(request_leave), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-
-						for(j = 0; j < CHANNEL_MAX; j++){
-							if(strcmp(channel, activeChannels[j]) == 0){
-								strcpy(activeChannels[j], "0");
-								break;
-							}
-						}
-					}
-				}
-
-				//Handle List request
-				if(strcmp(&token[0], "/list\n") == 0){
-					sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-				}
-
-				//Handle Who request
-				if(strcmp(&token[0], "/who") == 0){
-					char *channel = &token[5];
-					if(strlen(channel) > 64){
-						perror("Client: Channel name too long");
-						exit(EXIT_FAILURE);
-					}
-					channel[strlen(channel) - 1] = 0;
-	
-					strncpy(who_req->req_channel, channel, CHANNEL_MAX - 1);
-
-					sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-				}
-
-				//Handle Switch request
-				if(strcmp(&token[0], "/switch") == 0){
-					char *channel = &token[8];
-					if(strlen(channel) > 64){
-						perror("Client: Channel name too long");
-						exit(EXIT_FAILURE);
-					}
-					channel[strlen(channel) - 1] = 0;
-					int nonActive = 0;
-					int j;
-					for(j = 0; j < 8192; j++){
-						if(strcmp(channel, activeChannels[j]) == 0){
-							strcpy(currentChannel, channel);
-							nonActive = 1;
-							break;
-						}
-					}
-					if(!nonActive){
-						printf("Client: You are not subscribed to that Channel\n");
-					}
-				}	
-
-				//Handle exit request
-				if(strcmp(&token[0], "/exit\n") == 0){
-					//Logout
-					sendto(sockfd, logout_req, sizeof(request_logout), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-					break;
-				}
+			}
+			if(inChar != '\n'){
+				inMsg[charCtr] = inChar;
+				printf("%c", inChar);
+				charCtr++;
 			}else{
-				//Send the users message
-				strcpy(say_req->req_channel, currentChannel);
-				strncpy(say_req->req_text, input, SAY_MAX);
-				sendto(sockfd, say_req, sizeof(request_say), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+				printf("\n");
+				fflush(stdout);
+				break;
 			}
 		}
+		memset(&input[0], 0, 100);
+		strcpy(input, inMsg);
+		//Tokenize the input
+		char *token;
+		char first;
+		strcpy(tokenCopy, input);
+		token = strtok(tokenCopy, " ");
+		first = *token;
+
+		//If theres a request
+		if(first == '/'){
+
+			//Handle Join request
+			if(strcmp(&token[0], "/join") == 0){
+				char *channel = &token[6];
+				if(strlen(channel) > CHANNEL_MAX){
+					perror("Client: Channel name too long");
+					exit(EXIT_FAILURE);
+				}
+				if(strcmp(channel, " ") == 0){
+					perror("Please input a valid channel");
+					continue;
+				}
+
+				strncpy(join_req->req_channel, channel, CHANNEL_MAX - 1);
+				sendto(sockfd, join_req, sizeof(request_join), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+				
+				//Add to active channels
+				strcpy(currentChannel, channel);
+				int j;
+				int in = 0;
+				for(j = 0; j < CHANNEL_MAX; j++){
+					if(strcmp(activeChannels[j], channel) == 0){
+						in = 1;
+						break;
+					}
+				}
+				if(!in){
+					for(j = 0; j < CHANNEL_MAX; j++){
+						if(strcmp(activeChannels[j], "0") == 0){
+							strcpy(activeChannels[j], channel);
+							break;
+						}
+					}
+				}
+			}
+
+			//Handle Leave Request
+			if(strcmp(&token[0], "/leave") == 0){
+				char *channel = &token[7];
+				if(strlen(channel) > 64){
+					perror("Client: Channel name too long");
+					exit(EXIT_FAILURE);
+				}
+				strncpy(leave_req->req_channel, channel, CHANNEL_MAX - 1);
+				int j;
+				int in = 0;
+				for(j = 0; j < CHANNEL_MAX; j++){
+					if(strcmp(activeChannels[j], channel) == 0){
+						in = 1;
+						break;
+					}
+				}
+				if(in){
+					sendto(sockfd, leave_req, sizeof(request_leave), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+
+					for(j = 0; j < CHANNEL_MAX; j++){
+						if(strcmp(channel, activeChannels[j]) == 0){
+							strcpy(activeChannels[j], "0");
+							break;
+						}
+					}
+				}
+			}
+
+			//Handle List request
+			if(strcmp(&token[0], "/list\n") == 0){
+				sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+			}
+
+			//Handle Who request
+			if(strcmp(&token[0], "/who") == 0){
+				char *channel = &token[5];
+				if(strlen(channel) > 64){
+					perror("Client: Channel name too long");
+					exit(EXIT_FAILURE);
+				}
+
+				strncpy(who_req->req_channel, channel, CHANNEL_MAX - 1);
+
+				sendto(sockfd, who_req, sizeof(request_who), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+			}
+
+			//Handle Switch request
+			if(strcmp(&token[0], "/switch") == 0){
+				char *channel = &token[8];
+				if(strlen(channel) > 64){
+					perror("Client: Channel name too long");
+					exit(EXIT_FAILURE);
+				}
+				int nonActive = 0;
+				int j;
+				for(j = 0; j < 8192; j++){
+					if(strcmp(channel, activeChannels[j]) == 0){
+						strcpy(currentChannel, channel);
+						nonActive = 1;
+						break;
+					}
+				}
+				if(!nonActive){
+					printf("Client: You are not subscribed to that Channel\n");
+				}
+			}	
+
+			//Handle exit request
+			if(strcmp(&token[0], "/exit\n") == 0){
+				//Logout
+				sendto(sockfd, logout_req, sizeof(request_logout), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+				break;
+			}
+		}else{
+			//Send the users message
+			strcpy(say_req->req_channel, currentChannel);
+			strncpy(say_req->req_text, input, SAY_MAX);
+			sendto(sockfd, say_req, sizeof(request_say), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+		}
+		
 	}
 
 	cooked_mode();
