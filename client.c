@@ -166,7 +166,10 @@ void *recieveThread(void *){
 		if(inType == 3){
 			error_txt = (text_error *)rcvMsg;
 			
+			printf("\b");
 			printf("Client ERROR: %s\n", error_txt -> txt_error);
+			printf(">");
+			fflush(stdout);
 		}
 	}
 
