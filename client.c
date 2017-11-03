@@ -1,3 +1,8 @@
+/* Jack Brockway
+ * Student ID: 951411701
+ *
+ * Randy Chen and Brian Leeson helped with understanding how to recieve messages
+ */
 #include "raw.h"
 #include "duckchat.h"
 
@@ -299,14 +304,14 @@ int main(int argc, char *argv[]){
 				strcpy(currentChannel, channel);
 				int j;
 				int in = 0;
-				for(j = 0; j < CHANNEL_MAX; j++){
+				for(j = 0; j < 8192; j++){
 					if(strcmp(activeChannels[j], channel) == 0){
 						in = 1;
 						break;
 					}
 				}
 				if(!in){
-					for(j = 0; j < CHANNEL_MAX; j++){
+					for(j = 0; j < 8192; j++){
 						if(strcmp(activeChannels[j], "0") == 0){
 							strcpy(activeChannels[j], channel);
 							break;
