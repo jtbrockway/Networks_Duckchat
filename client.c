@@ -341,7 +341,7 @@ int main(int argc, char *argv[]){
 			}
 
 			//Handle List request
-			if(strcmp(&token[0], "/list\n") == 0){
+			if(strcmp(&token[0], "/list") == 0){
 				sendto(sockfd, list_req, sizeof(request_list), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 			}
 
@@ -380,7 +380,7 @@ int main(int argc, char *argv[]){
 			}	
 
 			//Handle exit request
-			if(strcmp(&token[0], "/exit\n") == 0){
+			if(strcmp(&token[0], "/exit") == 0){
 				//Logout
 				sendto(sockfd, logout_req, sizeof(request_logout), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 				break;
